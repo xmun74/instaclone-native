@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity } from "react-native-gesture-handler";
+import { TouchableOpacity } from "react-native";
 import styled from "styled-components/native";
 import { colors } from "../color";
 import AuthLayout from "../components/auth/AuthLayout";
@@ -9,6 +9,7 @@ const LoginLink = styled.Text`
   color: ${colors.blue};
   font-weight: 600;
   margin-top: 20px;
+  text-align: center;
 `;
 
 export default function Welcome({ navigation }) {
@@ -22,7 +23,7 @@ export default function Welcome({ navigation }) {
         onPress={goToCreateAccount}
       />
       <TouchableOpacity onPress={goToLogIn}>
-        <LoginLink onPress={goToLogIn}>Log In</LoginLink>
+        <LoginLink>Log In</LoginLink>
       </TouchableOpacity>
     </AuthLayout>
   );

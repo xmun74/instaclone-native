@@ -5,21 +5,32 @@ import * as Font from "expo-font";
 import { Asset } from "expo-asset";
 import LoggedOutNav from "./navigators/LoggedOutNav";
 import { NavigationContainer } from "@react-navigation/native";
+import { ApolloProvider, useReactiveVar } from "@apollo/client";
+import client, { isLoggedInVar, tokenVar } from "./apollo";
+import LoggedInNav from "./navigators/LoggedInNav";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function App() {
   const [loading, setLoading] = useState(true);
   const onFinish = () => setLoading(false);
-  const preload = () => {
-    // preload는 항상 promise를 리턴
-    const fontsToLoad = [Ionicons.font]; // 폰트 프리로드
-    const fontPromises = fontsToLoad.map((font) => Font.loadAsync(font)); //Font.loadAsync의 프로미스배열 리턴하기
-    const imagesToLoad = [
-      // 사진 프리로드
-      require("./assets/logo2.png"),
-      "https://en.wikipedia.org/wiki/Instagram#/media/File:Instagram_logo.svg",
-    ];
+  const isLoggedIn = useReactiveVar(isLoggedInVar);
+  const preloadAssets = () => {
+    // Asset: 폰트,사진 프리로드
+    const fontsToLoad = [Ionicons.font];
+    const fontPromises = fontsToLoad.map((font) => Font.loadAsync(font)); //.loadAsync의 프로미스배열 리턴
+    const imagesToLoad = [require("./assets/logo2.png")];
     const imagePromises = imagesToLoad.map((image) => Asset.loadAsync(image));
-    return Promise.all([...fontPromises, ...imagePromises]); //Promise.all은 배열에 있는 프로미스들이 다 끝날때까지 기다려줌
+    return Promise.all([...fontPromises, ...imagePromises]); //Promise.all:배열에 promise들 끝까지 기다려줌
+  };
+  // preload는 항상 Promise를 리턴
+  const preload = async () => {
+    // 2. 토큰을 AsyncStorage에서 받아옴 (복원)
+    const token = await AsyncStorage.getItem("token");
+    if (token) {
+      isLoggedInVar(true);
+      tokenVar(token);
+    }
+    return preloadAssets();
   };
   if (loading) {
     return (
@@ -31,8 +42,10 @@ export default function App() {
     );
   }
   return (
-    <NavigationContainer>
-      <LoggedOutNav />
-    </NavigationContainer>
+    <ApolloProvider client={client}>
+      <NavigationContainer>
+        {isLoggedIn ? <LoggedInNav /> : <LoggedOutNav />}
+      </NavigationContainer>
+    </ApolloProvider>
   );
 }
