@@ -10,8 +10,9 @@ export default function LoggedOutNav() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerBackTitleVisible: false,
-        headerTitle: false, //타이틀삭제
+        headerBackTitleVisible: false, //이전 헤더 타이틀 삭제
+        title: false, // 헤더 타이틀만 삭제
+        // headerShown: false, //헤더 타이틀삭제, < 화살표도 삭제됨
         headerTransparent: true, //헤더 안보여줌
         headerTintColor: "white", //헤더컬러
       }}

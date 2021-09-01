@@ -1,13 +1,73 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import Feed from "../screens/Feed";
+import { View } from "react-native";
+import TabIcon from "../components/nav/TabIcon";
+import SharedStackNav from "./SharedStackNav";
 
 const Tabs = createBottomTabNavigator();
 
 export default function LoggedInNav() {
   return (
-    <Tabs.Navigator>
-      <Tabs.Screen name="Feed" component={Feed} />
+    <Tabs.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: "white", // tab 클릭했을때 색
+        tabBarShowLabel: false, // tab 라벨 지우기
+        tabBarStyle: {
+          borderTopColor: "rgba(255,255,255,0.3)", // tab border 색
+          backgroundColor: "black",
+        },
+        headerShown: false, //헤더 지우기
+      }}
+    >
+      <Tabs.Screen
+        name="Feed"
+        options={{
+          tabBarIcon: (
+            { focused, color, size } // tab에 아이콘 넣기
+          ) => <TabIcon iconName={"home"} color={color} focused={focused} />,
+        }}
+      >
+        {() => <SharedStackNav screenName="Feed" />}
+      </Tabs.Screen>
+      <Tabs.Screen
+        name="Search"
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <TabIcon iconName={"search"} color={color} focused={focused} />
+          ),
+        }}
+      >
+        {() => <SharedStackNav screenName="Search" />}
+      </Tabs.Screen>
+      <Tabs.Screen
+        name="Camera"
+        component={View}
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <TabIcon iconName={"camera"} color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Notifications"
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <TabIcon iconName={"heart"} color={color} focused={focused} />
+          ),
+        }}
+      >
+        {() => <SharedStackNav screenName="Notifications" />}
+      </Tabs.Screen>
+      <Tabs.Screen
+        name="Me"
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <TabIcon iconName={"person"} color={color} focused={focused} />
+          ),
+        }}
+      >
+        {() => <SharedStackNav screenName="Me" />}
+      </Tabs.Screen>
     </Tabs.Navigator>
   );
 }
