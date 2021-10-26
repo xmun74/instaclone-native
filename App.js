@@ -35,6 +35,7 @@ export default function App() {
     await persistCache({
       cache,
       storage: new AsyncStorageWrapper(AsyncStorage),
+      serialize: false, //언제든 schema를 변경할수있다
     });
     return preloadAssets();
   };

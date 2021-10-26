@@ -17,8 +17,8 @@ const Stack = createStackNavigator();
 export default function SharedStackNav({ screenName }) {
   return (
     <Stack.Navigator
-      headerMode="screen" // 페이지같이 넘기기
       screenOptions={{
+        headerMode: "screen", // 페이지 전체를 같이 넘기기
         headerBackTitleVisible: false, //헤더 전타이틀 안보이게하기
         headerTintColor: "white", //헤더 글자색
         headerStyle: {

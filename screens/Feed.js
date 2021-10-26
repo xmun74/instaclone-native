@@ -10,6 +10,7 @@ const FEED_QUERY = gql`
     seeFeed(offset: $offset) {
       ...PhotoFragment
       user {
+        id
         username
         avatar
       }
@@ -32,7 +33,7 @@ export default function Feed() {
     },
   });
   const renderPhoto = ({ item: photo }) => {
-    //photo로 rename함.
+    //:photo로 rename함.
     return <Photo {...photo} />; // Photo 리턴
   };
 
@@ -46,13 +47,13 @@ export default function Feed() {
   return (
     <ScreenLayout loading={loading}>
       <FlatList
-        onEndReachedThreshold={0.02} // 리스트 끝 지정함. 0이상의 숫자 값. (0이면 완전 리스트 끝)
-        // native에서 사용자가 리스트끝에 도달했을때 호출되는 함수
+        onEndReachedThreshold={0.02} // 리스트 끝 지정함. 0이상의 숫자 값.(0:완전 리스트 끝/1:스크롤안해도 바로 끝이라고 인식)
+        // onEndReached: native에서 사용자가 리스트끝에 도달했을때 호출되는 함수
         onEndReached={() =>
           fetchMore({
-            //fetchMore: apollo에서 기존결과 유지 + 새로운결과 패치하는 함수
+            //fetchMore: apollo에서 기존결과 유지 + 새로운결과 패치하는 함수. apollo.js에서 정의해줘야 함
             variables: {
-              offset: data?.seeFeed?.length, //현재 list의 길이
+              offset: data?.seeFeed?.length, //현재 list의 길이만큼만 표시(현재 2개만 표시됨)
             },
           })
         }

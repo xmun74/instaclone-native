@@ -3,7 +3,8 @@ import PropTypes from "prop-types";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import styled from "styled-components/native";
-import { Image, TouchableOpacity, useWindowDimensions } from "react-native";
+import { Image, useWindowDimensions } from "react-native";
+import { TouchableOpacity } from "react-native-gesture-handler";
 import { gql, useMutation } from "@apollo/client";
 
 const TOGGLE_LIKE_MUTATION = gql`
@@ -62,10 +63,11 @@ function Photo({ id, user, caption, file, isLiked, likes }) {
   const [imageHeight, setImageHeight] = useState(height - 450); //길이 기본값 설정
   useEffect(() => {
     Image.getSize(file, (width, height) => {
-      //file에서 가로세로 성공적으로 받아오면=> 세로크기 / 3 설정하기
-      setImageHeight(height / 3);
+      //이미지파일의 출력크키 값 조절하기
+      //file에서 가로세로 성공적으로 받아오면 => 세로크기 / 3 설정하기
+      setImageHeight(height / 3); //여기 height는 image.getSize에서 불러온 값
     });
-  }, [file]); //useEffect로 file에 대한 변화 계속 감지
+  }, [file]); //useEffect로 file에 대한 변화 계속 감지: 사진 가로,세로값 불러오기 성공하면 state 설정해주기
 
   const updateToggleLike = (cache, result) => {
     const {
@@ -97,9 +99,15 @@ function Photo({ id, user, caption, file, isLiked, likes }) {
     },
     update: updateToggleLike,
   });
+  const goToProfile = () => {
+    navigation.navigate("Profile", {
+      username: user.username,
+      id: user.id,
+    });
+  };
   return (
     <Container>
-      <Header onPress={() => navigation.navigate("Profile")}>
+      <Header onPress={goToProfile}>
         <UserAvatar resizeMode="cover" source={{ uri: user.avatar }} />
         <Username>{user.username}</Username>
       </Header>
@@ -124,11 +132,17 @@ function Photo({ id, user, caption, file, isLiked, likes }) {
             <Ionicons name="chatbubble-outline" color="white" size={22} />
           </Action>
         </Actions>
-        <TouchableOpacity onPress={() => navigation.navigate("Likes")}>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("Likes", {
+              photoId: id,
+            })
+          }
+        >
           <Likes>{likes === 1 ? "1 like" : `${likes} likes`}</Likes>
         </TouchableOpacity>
         <Caption>
-          <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
+          <TouchableOpacity onPress={goToProfile}>
             <Username>{user.username}</Username>
           </TouchableOpacity>
           <CaptionText>{caption}</CaptionText>
@@ -148,6 +162,6 @@ Photo.propTypes = {
   file: PropTypes.string.isRequired,
   isLiked: PropTypes.bool.isRequired,
   likes: PropTypes.number.isRequired,
-  commentNumber: PropTypes.number.isRequired,
+  commentNumber: PropTypes.number,
 };
 export default Photo;
