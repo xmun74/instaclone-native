@@ -1,7 +1,8 @@
 import { Camera } from "expo-camera";
 import React, { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { TouchableOpacity } from "react-native";
+import { StatusBar, TouchableOpacity } from "react-native";
+import Slider from "@react-native-community/slider";
 import styled from "styled-components/native";
 
 const Container = styled.View`
@@ -11,8 +12,15 @@ const Container = styled.View`
 
 const Actions = styled.View`
   flex: 0.35;
+  padding: 0px 50px;
+  align-items: center;
+  justify-content: space-around;
+`;
+
+const ButtonsContainer = styled.View`
+  width: 100%;
   flex-direction: row;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
 `;
 
@@ -24,9 +32,21 @@ const TakePhotoBtn = styled.TouchableOpacity`
   border-radius: 50px;
 `;
 
-export default function TakePhoto() {
+const SliderContainer = styled.View``;
+const ActionsContainer = styled.View`
+  flex-direction: row;
+`;
+const CloseBtn = styled.TouchableOpacity`
+  position: absolute;
+  top: 20px;
+  left: 20px;
+`;
+
+export default function TakePhoto({ navigation }) {
   const [ok, setOk] = useState(false);
-  const [cameraType, setCameraType] = useState(Camera.Constants.Type.back); //후면 카메라 기본설정
+  const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off); //플래시off기본설정
+  const [zoom, setZoom] = useState(0);
+  const [cameraType, setCameraType] = useState(Camera.Constants.Type.front); //후면 카메라 기본설정
   const getPermissions = async () => {
     const { granted } = await Camera.requestCameraPermissionsAsync();
     setOk(granted);
@@ -34,12 +54,82 @@ export default function TakePhoto() {
   useEffect(() => {
     getPermissions();
   }, []);
+  const onCameraSwitch = () => {
+    if (cameraType === Camera.Constants.Type.front) {
+      setCameraType(Camera.Constants.Type.back);
+    } else {
+      setCameraType(Camera.Constants.Type.front);
+    }
+  };
+  const onZoomValueChange = (e) => {
+    setZoom(e);
+  };
+  const onFlashChange = () => {
+    if (flashMode === Camera.Constants.FlashMode.off) {
+      setFlashMode(Camera.Constants.FlashMode.on);
+    } else if (flashMode === Camera.Constants.FlashMode.on) {
+      setFlashMode(Camera.Constants.FlashMode.auto);
+    } else if (flashMode === Camera.Constants.FlashMode.auto) {
+      setFlashMode(Camera.Constants.FlashMode.off);
+    }
+  };
   return (
     <Container>
-      <Camera type={cameraType} style={{ flex: 1 }} />
+      <StatusBar hidden={true} />
+      <Camera
+        type={cameraType}
+        style={{ flex: 1 }}
+        zoom={zoom}
+        flashMode={flashMode}
+      >
+        <CloseBtn onPress={() => navigation.navigate("Tabs")}>
+          <Ionicons name="close" color="white" size={30} />
+        </CloseBtn>
+      </Camera>
       <Actions>
-        <TakePhotoBtn></TakePhotoBtn>
-        <TouchableOpacity></TouchableOpacity>
+        <SliderContainer>
+          <Slider
+            style={{ width: 200, height: 40 }}
+            minimumValue={0}
+            maximumValue={1}
+            minimumTrackTintColor="#FFFFFF"
+            maximumTrackTintColor="rgba(255, 255, 255, 0.5)"
+            onValueChange={onZoomValueChange}
+          />
+        </SliderContainer>
+        <ButtonsContainer>
+          <TakePhotoBtn />
+          <ActionsContainer>
+            <TouchableOpacity
+              onPress={onFlashChange}
+              style={{ marginRight: 30 }}
+            >
+              <Ionicons
+                size={30}
+                name={
+                  flashMode === Camera.Constants.FlashMode.off
+                    ? "flash-off"
+                    : flashMode === Camera.Constants.FlashMode.on
+                    ? "flash"
+                    : flashMode === Camera.Constants.FlashMode.auto
+                    ? "eye"
+                    : ""
+                }
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onCameraSwitch}>
+              <Ionicons
+                size={30}
+                color="white"
+                name={
+                  cameraType === Camera.Constants.Type.front
+                    ? "camera-reverse"
+                    : "camera"
+                }
+              />
+            </TouchableOpacity>
+          </ActionsContainer>
+        </ButtonsContainer>
       </Actions>
     </Container>
   );
