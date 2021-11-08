@@ -1,10 +1,11 @@
 import { Camera } from "expo-camera";
 import React, { useEffect, useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, StatusBar, TouchableOpacity } from "react-native";
+import { Alert, Image, StatusBar, TouchableOpacity } from "react-native";
 import Slider from "@react-native-community/slider";
 import styled from "styled-components/native";
 import * as MediaLibrary from "expo-media-library";
+import { useIsFocused } from "@react-navigation/core";
 
 const Container = styled.View`
   flex: 1;
@@ -42,10 +43,13 @@ const CloseBtn = styled.TouchableOpacity`
   top: 20px;
   left: 20px;
 `;
+const PhotoActions = styled.TouchableOpacity`
+  flex-direction: row;
+`;
 
 const PhotoAction = styled.TouchableOpacity`
   background-color: white;
-  padding: 5px 10px;
+  padding: 10px 25px;
   border-radius: 4px;
 `;
 const PhotoActionText = styled.Text`
@@ -86,6 +90,29 @@ export default function TakePhoto({ navigation }) {
       setFlashMode(Camera.Constants.FlashMode.off);
     }
   };
+  const goToUpload = (save) => {
+    if (save) {
+      await MediaLibrary.saveToLibraryAsync(takenPhoto);
+      //createAssetAsync: 사진저장하기/ saveToLibraryAsync:사진 저장하진 않음 업로드만 함
+    }
+    navigation.navigate("UploadForm", {
+      file: takenPhoto,
+    });
+    console.log("will upload", takenPhoto);
+  };
+  const onUpload = () => {
+    // 3. 사진 저장&업로드 / 업로드만 할건지 선택
+    Alert.alert("Save Photo?", "Save Photo & Upload or just Upload", [
+      {
+        text: "Save & Upload",
+        onPress: () => goToUpload(true),
+      },
+      {
+        text: "Just Upload",
+        onPress: () => goToUpload(false),
+      },
+    ]);
+  };
   const onCameraReady = () => setCameraReady(true); //takePictureAsync함수 전에 onCameraReady 콜백 대기해야 함
   const takePhoto = async () => {
     // 1. 사진촬영하기
@@ -96,15 +123,14 @@ export default function TakePhoto({ navigation }) {
         quality: 1,
         exif: true,
       });
-      setTakenPhoto(uri);
-      //const asset = await MediaLibrary.createAssetAsync(uri);
-      //createAssetAsync: 사진저장하기/ saveToLibraryAsync:사진 저장하진 않음 업로드만 함
+      setTakenPhoto(uri); // 2. 찍은 사진 보여주기
     }
   };
   const onDismiss = () => setTakenPhoto("");
+  const isFocussed = useIsFocused(); //특정화면보고있을때만 카메라 보여주기
   return (
     <Container>
-      <StatusBar hidden={true} />
+      {isFocussed ? <StatusBar hidden={true} /> : null}
       {takenPhoto === "" ? (
         <Camera
           type={cameraType}
@@ -126,6 +152,7 @@ export default function TakePhoto({ navigation }) {
           <SliderContainer>
             <Slider
               style={{ width: 200, height: 40 }}
+              value={zoom}
               minimumValue={0}
               maximumValue={1}
               minimumTrackTintColor="#FFFFFF"
@@ -168,17 +195,14 @@ export default function TakePhoto({ navigation }) {
           </ButtonsContainer>
         </Actions>
       ) : (
-        <Actions>
+        <PhotoActions>
           <PhotoAction onPress={onDismiss}>
             <PhotoActionText>Dismiss</PhotoActionText>
           </PhotoAction>
-          <PhotoAction>
+          <PhotoAction onPress={onUpload}>
             <PhotoActionText>Upload</PhotoActionText>
           </PhotoAction>
-          <PhotoAction>
-            <PhotoActionText>Save & Upload</PhotoActionText>
-          </PhotoAction>
-        </Actions>
+        </PhotoActions>
       )}
     </Container>
   );
