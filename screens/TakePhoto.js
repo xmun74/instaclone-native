@@ -90,7 +90,7 @@ export default function TakePhoto({ navigation }) {
       setFlashMode(Camera.Constants.FlashMode.off);
     }
   };
-  const goToUpload = (save) => {
+  const goToUpload = async (save) => {
     if (save) {
       await MediaLibrary.saveToLibraryAsync(takenPhoto);
       //createAssetAsync: 사진저장하기/ saveToLibraryAsync:사진 저장하진 않음 업로드만 함
