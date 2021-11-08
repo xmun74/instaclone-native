@@ -23,6 +23,7 @@ export default function UploadNav() {
       }}
       tabBarPosition="bottom" //탭 위치 아래로 변경
     >
+      <Tab.Screen name="Take" component={TakePhoto} />
       <Tab.Screen name="SelectRoot">
         {() => (
           // SelectPhoto는 사진선택하는 탭이 있어야 해서 Stack리턴하는 함수 이용
@@ -47,7 +48,6 @@ export default function UploadNav() {
           </Stack.Navigator>
         )}
       </Tab.Screen>
-      <Tab.Screen name="Take" component={TakePhoto} />
     </Tab.Navigator>
   );
 }
