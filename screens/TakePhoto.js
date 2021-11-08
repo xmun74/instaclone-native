@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { StatusBar, TouchableOpacity } from "react-native";
 import Slider from "@react-native-community/slider";
 import styled from "styled-components/native";
+import { useRef } from "react";
 
 const Container = styled.View`
   flex: 1;
@@ -43,6 +44,8 @@ const CloseBtn = styled.TouchableOpacity`
 `;
 
 export default function TakePhoto({ navigation }) {
+  const camera = useRef();
+  const [cameraReady, setCameraReady] = useState(false);
   const [ok, setOk] = useState(false);
   const [flashMode, setFlashMode] = useState(Camera.Constants.FlashMode.off); //플래시off기본설정
   const [zoom, setZoom] = useState(0);
@@ -73,6 +76,17 @@ export default function TakePhoto({ navigation }) {
       setFlashMode(Camera.Constants.FlashMode.off);
     }
   };
+  const onCameraReady = () => setCameraReady(true); //takePictureAsync함수 전에 onCameraReady 콜백 대기해야 함
+  const takePhoto = async () => {
+    if (camera.current && cameraReady) {
+      //카메라존재 하는지 && 촬영준비 끝냈는지
+      const photo = await camera.current.takePictureAsync({
+        //사진 촬영하기 /최댓값,메타데이터사용
+        quality: 1,
+        exif: true,
+      });
+    }
+  };
   return (
     <Container>
       <StatusBar hidden={true} />
@@ -81,6 +95,8 @@ export default function TakePhoto({ navigation }) {
         style={{ flex: 1 }}
         zoom={zoom}
         flashMode={flashMode}
+        ref={camera}
+        onCameraReady={onCameraReady}
       >
         <CloseBtn onPress={() => navigation.navigate("Tabs")}>
           <Ionicons name="close" color="white" size={30} />
@@ -98,7 +114,7 @@ export default function TakePhoto({ navigation }) {
           />
         </SliderContainer>
         <ButtonsContainer>
-          <TakePhotoBtn />
+          <TakePhotoBtn onPress={takePhoto} />
           <ActionsContainer>
             <TouchableOpacity
               onPress={onFlashChange}
