@@ -1,9 +1,22 @@
+import { useMutation } from "@apollo/client";
+import { ReactNativeFile } from "apollo-upload-client";
+import gql from "graphql-tag";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import styled from "styled-components/native";
 import { colors } from "../colors";
 import DismissKeyboard from "../components/DismissKeyboard";
+import { FEED_PHOTO } from "../fragments";
+
+const UPLOAD_PHOTO_MUTATION = gql`
+  mutation uploadPhoto($file: Upload!, $caption: String) {
+    uploadPhoto(file: $file, caption: $caption) {
+      ...FeedPhoto
+    }
+  }
+  ${FEED_PHOTO}
+`;
 
 const Container = styled.View`
   flex: 1;
@@ -30,14 +43,9 @@ const HeaderRightText = styled.Text`
 `;
 
 export default function UploadForm({ route, navigation }) {
+  const [uploadPhotoMutation, { loading }] = useMutation(UPLOAD_PHOTO_MUTATION);
   const HeaderRight = () => (
-    <TouchableOpacity
-      onPress={() =>
-        navigation.navigate("UploadForm", {
-          file: chosenPhoto,
-        })
-      }
-    >
+    <TouchableOpacity onPress={handleSubmit(onValid)}>
       <HeaderRightText>Next</HeaderRightText>
     </TouchableOpacity>
   );
@@ -54,11 +62,25 @@ export default function UploadForm({ route, navigation }) {
   }, [register]);
   useEffect(() => {
     navigation.setOptions({
-      headerRight: HeaderRightLoading,
-      headerLeft: () => null,
+      //제출버튼 누르면
+      headerRight: loading ? HeaderRightLoading : HeaderRight, //오른쪽 로딩아이콘 출력
+      ...(loading && { headerLeft: () => null }), //왼쪽화살표 삭제
     });
-  }, [navigation]);
-  const onValid = ({ caption }) => {};
+  }, [loading]);
+  const onValid = ({ caption }) => {
+    const file = new ReactNativeFile({
+      uri: route.params.file,
+      name: `1.jpg`,
+      type: "image/jpeg",
+    });
+    uploadPhotoMutation({
+      variables: {
+        caption,
+        file,
+      },
+    });
+  };
+  console.log(error);
   return (
     <DismissKeyboard>
       <Container>

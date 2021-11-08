@@ -4,6 +4,7 @@ import {
   InMemoryCache,
   makeVar,
 } from "@apollo/client";
+import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
 import { offsetLimitPagination } from "@apollo/client/utilities";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -40,6 +41,15 @@ const authLink = setContext((_, { headers }) => {
   };
 });
 
+const onErrorLink = onError(({ graphQLErrors, networkError }) => {
+  if (graphQLErrors) {
+    console.log("GraphQL Error", graphQLErrors);
+  }
+  if (networkError) {
+    console.log("Network Error", networkError);
+  }
+});
+
 export const cache = new InMemoryCache({
   //cache를 export해서 다른곳에서 restore하기 한다.(App.js에서)
   //fetchMore로 추가된데이터를 cache에 넣는 데이터 처리방식을 설정해준다.
@@ -54,7 +64,8 @@ export const cache = new InMemoryCache({
 });
 
 const client = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link: authLink.concat(onErrorLink).concat(httpLink),
+  //authLink:헤더설정/onErrorLink:에러출력/ httpLink가 종료하는링크여서 맨 마지막에 와야함
   cache,
 });
 
