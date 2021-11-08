@@ -3,7 +3,8 @@ import { ReactNativeFile } from "apollo-upload-client";
 import gql from "graphql-tag";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
+import { TouchableOpacity } from "react-native-gesture-handler";
 import styled from "styled-components/native";
 import { colors } from "../colors";
 import DismissKeyboard from "../components/DismissKeyboard";
@@ -43,20 +44,37 @@ const HeaderRightText = styled.Text`
 `;
 
 export default function UploadForm({ route, navigation }) {
-  const [uploadPhotoMutation, { loading }] = useMutation(UPLOAD_PHOTO_MUTATION);
+  const updateUploadPhoto = (cache, result) => {
+    const {
+      data: { uploadPhoto },
+    } = result;
+    if (uploadPhoto.id) {
+      cache.modify({
+        id: "ROOT_QUERY",
+        fields: {
+          seeFeed(prev) {
+            return [uploadPhoto, ...prev];
+          },
+        },
+      });
+      navigation.navigate("Tabs");
+    }
+  };
+  const [uploadPhotoMutation, { loading }] = useMutation(
+    UPLOAD_PHOTO_MUTATION,
+    {
+      update: updateUploadPhoto,
+    }
+  );
   const HeaderRight = () => (
     <TouchableOpacity onPress={handleSubmit(onValid)}>
       <HeaderRightText>Next</HeaderRightText>
     </TouchableOpacity>
   );
   const HeaderRightLoading = () => (
-    <ActivityIndicator
-      size="small"
-      color="whtie"
-      styled={{ marginRight: 10 }}
-    />
+    <ActivityIndicator size="small" color="white" style={{ marginRight: 10 }} />
   );
-  const [register, handleSubmit, setValue] = useForm();
+  const { register, handleSubmit, setValue } = useForm();
   useEffect(() => {
     register("caption");
   }, [register]);
@@ -80,7 +98,6 @@ export default function UploadForm({ route, navigation }) {
       },
     });
   };
-  console.log(error);
   return (
     <DismissKeyboard>
       <Container>
@@ -91,7 +108,7 @@ export default function UploadForm({ route, navigation }) {
             placeholder="Write a caption..."
             placeholderTextColor="rgba(0, 0, 0, 0.5)"
             onSubmitEditing={handleSubmit(onValid)}
-            onChangeText={(text) => setValue[("caption", text)]}
+            onChangeText={(text) => setValue("caption", text)}
           />
         </CaptionContainer>
       </Container>
