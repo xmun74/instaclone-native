@@ -18,6 +18,7 @@ const SEND_MESSAGE_MUTATION = gql`
 const ROOM_QUERY = gql`
   query seeRoom($id: Int!) {
     seeRoom(id: $id) {
+      id
       messages {
         id
         payload
@@ -64,8 +65,9 @@ const TextInput = styled.TextInput`
 
 export default function Room({ route, navigation }) {
   const { data: meData } = useMe();
-  const { register, setValue, handleSubmit, getValues } = useForm();
+  const { register, setValue, handleSubmit, getValues, watch } = useForm();
   const updataSendMessage = (cache, result) => {
+    // 1.updataSendMessage함수호출하면 cache,mutation의 result얻게됨
     const {
       data: {
         sendMessage: { ok, id },
@@ -73,7 +75,9 @@ export default function Room({ route, navigation }) {
     } = result;
     if (ok && meData) {
       const { message } = getValues();
+      setValue("message", "");
       const messageObj = {
+        //2. 가짜 message객체 만들 수 있음/ seeRoom안과 같아야함
         id,
         payload: message,
         user: {
@@ -84,6 +88,7 @@ export default function Room({ route, navigation }) {
         __typename: "Message",
       };
       const messageFragment = cache.writeFragment({
+        // 3. cache에 넣을 frgment를 똑같은 모양으로 넣고
         fragment: gql`
           fragment NewMessage on Message {
             id
@@ -95,13 +100,13 @@ export default function Room({ route, navigation }) {
             read
           }
         `,
-        data: messageObj,
+        data: messageObj, //가짜객체 cache에 보내기
       });
       cache.modify({
-        id: `Room:${route.params.id}`,
+        id: `Room:${route.params.id}`, // Room 1,2,3...이런식 Aplool는 id값으로 room판별하고 있음
         fields: {
           messages(prev) {
-            return [messageFragment, ...prev];
+            return [...prev, messageFragment]; //새로운 메시지 , 이전메시지 배열리턴
           },
         },
       });
@@ -155,7 +160,7 @@ export default function Room({ route, navigation }) {
     >
       <ScreenLayout loading={loading}>
         <FlatList
-          style={{ width: "100%", paddingTop: 10 }}
+          style={{ width: "100%", paddingVertical: 10 }}
           ItemSeparatorComponent={() => <View style={{ height: 20 }}></View>}
           data={data?.seeRoom?.messages}
           keyExtractor={(message) => "" + message.id}
@@ -168,6 +173,7 @@ export default function Room({ route, navigation }) {
           returnKeyType="Send"
           onChangeText={(text) => setValue("message", text)}
           onSubmitEditing={handleSubmit(onValid)}
+          value={watch("message")}
         />
       </ScreenLayout>
     </KeyboardAvoidingView>

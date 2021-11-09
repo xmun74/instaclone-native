@@ -32,11 +32,11 @@ export default function App() {
       tokenVar(token);
     }
     //persistCache :cache를 Asyncstorage에 저장해줌/ ApolloProvider 초기화 전인 preload단계에서 해주기.
-    await persistCache({
-      cache,
-      storage: new AsyncStorageWrapper(AsyncStorage),
-      serialize: false, //언제든 schema를 변경할수있다
-    });
+    // await persistCache({
+    //   cache,
+    //   storage: new AsyncStorageWrapper(AsyncStorage),
+    //   serialize: false, //언제든 schema를 변경할수있다
+    // });
     return preloadAssets();
   };
   if (loading) {
