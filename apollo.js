@@ -30,7 +30,7 @@ export const logUserOut = async () => {
 
 const uploadHttpLink = createUploadLink({
   // uri: "http://localhost:4000/graphql",
-  uri: "http://dffe-39-123-162-254.ngrok.io/graphql",
+  uri: "http://6791-39-123-162-254.ngrok.io/graphql",
 });
 
 const authLink = setContext((_, { headers }) => {
@@ -44,7 +44,7 @@ const authLink = setContext((_, { headers }) => {
 
 const onErrorLink = onError(({ graphQLErrors, networkError }) => {
   if (graphQLErrors) {
-    console.log("GraphQL Error", graphQLErrors);
+    console.log(`GraphQL Error`, graphQLErrors);
   }
   if (networkError) {
     console.log("Network Error", networkError);
