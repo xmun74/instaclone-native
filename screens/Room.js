@@ -1,4 +1,4 @@
-import { gql, useMutation, useQuery } from "@apollo/client";
+import { gql, useApolloClient, useMutation, useQuery } from "@apollo/client";
 import React, { useEffect } from "react";
 import { FlatList, KeyboardAvoidingView, View } from "react-native";
 import ScreenLayout from "../components/ScreenLayout";
@@ -34,6 +34,20 @@ import useMe from "../hooks/useMe";
 //   *reverse : JS에서 가존배열 변형시키는 함수.
 //   react-native에선 strict-mode(배열 고정모드, 변형불가)기때문에 reverse가 안되는 문제발생.
 //   그래서 다른 배열로 복사하고 나서 reverse하기
+
+const ROOM_UPDATES = gql`
+  subscription roomUpdates($id: Int!) {
+    roomUpdates(id: $id) {
+      id
+      payload
+      user {
+        username
+        avatar
+      }
+      read
+    }
+  }
+`;
 
 const SEND_MESSAGE_MUTATION = gql`
   mutation sendMessage($payload: String!, $roomId: Int, $userId: Int) {
@@ -104,7 +118,7 @@ const SendBtn = styled.TouchableOpacity``;
 export default function Room({ route, navigation }) {
   const { data: meData } = useMe(); //username,avatar를 가져오기
   const { register, setValue, handleSubmit, getValues, watch } = useForm(); // -useForm만들기
-  const updataSendMessage = (cache, result) => {
+  const updateSendMessage = (cache, result) => {
     // - 메시지 업데이트하기
     const {
       data: {
@@ -155,15 +169,58 @@ export default function Room({ route, navigation }) {
   const [sendMessageMutation, { loading: sendingMessage }] = useMutation(
     SEND_MESSAGE_MUTATION,
     {
-      update: updataSendMessage,
+      update: updateSendMessage,
     }
   );
 
-  const { data, loading } = useQuery(ROOM_QUERY, {
+  const { data, loading, subscribeToMore } = useQuery(ROOM_QUERY, {
     variables: {
       id: route?.params?.id,
     },
   });
+  const client = useApolloClient();
+  const updateQuery = (prevQuery, options) => {
+    const {
+      subscriptionData: {
+        data: { roomUpdates: message },
+      },
+    } = options;
+    if (message.id) {
+      const messageFragment = client.cache.writeFragment({
+        fragment: gql`
+          fragment NewMessage on Message {
+            id
+            payload
+            user {
+              username
+              avatar
+            }
+            read
+          }
+        `,
+        data: message,
+      });
+      client.cache.modify({
+        id: `Room:${route.params.id}`,
+        fields: {
+          messages(prev) {
+            return [...prev, messageFragment];
+          },
+        },
+      });
+    }
+  };
+  useEffect(() => {
+    if (data?.seeRoom) {
+      subscribeToMore({
+        document: ROOM_UPDATES,
+        variables: {
+          id: route?.params?.id,
+        },
+        updateQuery,
+      });
+    }
+  }, [data]);
   const onValid = ({ message }) => {
     if (!sendingMessage) {
       sendMessageMutation({

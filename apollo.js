@@ -3,12 +3,17 @@ import {
   createHttpLink,
   InMemoryCache,
   makeVar,
+  split,
 } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
-import { offsetLimitPagination } from "@apollo/client/utilities";
+import {
+  getMainDefinition,
+  offsetLimitPagination,
+} from "@apollo/client/utilities";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createUploadLink } from "apollo-upload-client";
+import { WebSocketLink } from "@apollo/client/link/ws";
 
 export const isLoggedInVar = makeVar(false); //makeVar은 기본값 false다
 export const tokenVar = makeVar("");
@@ -31,6 +36,16 @@ export const logUserOut = async () => {
 const uploadHttpLink = createUploadLink({
   // uri: "http://localhost:4000/graphql",
   uri: "http://2858-39-123-162-254.ngrok.io/graphql",
+});
+
+const wsLink = new WebSocketLink({
+  uri: "ws://localhost:4000/subscriptions",
+  options: {
+    reconnect: true,
+    connectionParams: () => ({
+      token: tokenVar(),
+    }),
+  },
 });
 
 const authLink = setContext((_, { headers }) => {
@@ -64,9 +79,23 @@ export const cache = new InMemoryCache({
   },
 });
 
+const httpLinks = authLink.concat(onErrorLink).concat(uploadHttpLink);
+//authLink:헤더설정/onErrorLink:에러출력/ httpLink가 종료하는링크여서 맨 마지막에 와야함
+
+const splitLink = split(
+  ({ query }) => {
+    const definition = getMainDefinition(query);
+    return (
+      definition.kind === "OperationDefinition" &&
+      definition.operation === "subscription"
+    );
+  },
+  wsLink, //subscription 맞으면 ws 실행
+  httpLinks //subscription 아니면 httpLinks실행 = authLink, onErrorLink, uploadHttpLink 등...
+);
+
 const client = new ApolloClient({
-  link: authLink.concat(onErrorLink).concat(uploadHttpLink),
-  //authLink:헤더설정/onErrorLink:에러출력/ httpLink가 종료하는링크여서 맨 마지막에 와야함
+  link: splitLink,
   cache,
 });
 
