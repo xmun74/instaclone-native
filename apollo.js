@@ -30,7 +30,7 @@ export const logUserOut = async () => {
 
 const uploadHttpLink = createUploadLink({
   // uri: "http://localhost:4000/graphql",
-  uri: "http://6791-39-123-162-254.ngrok.io/graphql",
+  uri: "http://2858-39-123-162-254.ngrok.io/graphql",
 });
 
 const authLink = setContext((_, { headers }) => {

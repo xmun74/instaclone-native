@@ -7,6 +7,34 @@ import { useForm } from "react-hook-form";
 import { Ionicons } from "@expo/vector-icons";
 import useMe from "../hooks/useMe";
 
+// 메시지보내는 Form만들기
+// 1. useForm만들고
+// 2. useEffect로 register만들기
+// 3. handleSubmit위한 onValid함수 생성
+// 4. 작성한 SEND_MESSAGE_MUTATION 뮤테이션 쓰기
+
+// updateSendMessage 메시지 업데이트하기
+// 1. updateSendMessage 생성 후 함수호출하면 cache와 result얻음. result는 ok,id만 있어서 가짜객체만들수 있다
+// 2. 뮤테이션에 update: updateSendMessage 넣고
+// 3. messageObj- 가짜객체 만들고 안에는 쿼리랑 같아야함
+// 4. getValues로 메시지 내용가져옴 / getValues= 가짜객체안에 payload가 됨
+// 5. 가짜객체 안 username,avatar는 useMe 훅으로 가져옴
+// 6. messageFragment- cache속이려고 -쿼리들만이 메시지를 cache에 넣기 가능
+// 7. cache.modify - message 이전값과 새로운 값 합쳐서 리턴
+
+// Form에서 send보내면 input창 텍스트 없애기
+// 1. useForm에서 wtch사용
+// 2. 업데이트할때마다 setValue("message", ""); 비워두기
+
+// 새로운 메시지부터 자동으로 내려가서 보이게하기
+// 1. FlatList inverted해서 밑에서부터 보이게하기
+// 2. 새로운 메시지부터 보이게 하기
+//   (백엔드에서 배열 뒤집어서 리턴 or 프론트엔드에서 reverse하기)
+//   메시지배열 reverse하기
+//   *reverse : JS에서 가존배열 변형시키는 함수.
+//   react-native에선 strict-mode(배열 고정모드, 변형불가)기때문에 reverse가 안되는 문제발생.
+//   그래서 다른 배열로 복사하고 나서 reverse하기
+
 const SEND_MESSAGE_MUTATION = gql`
   mutation sendMessage($payload: String!, $roomId: Int, $userId: Int) {
     sendMessage(payload: $payload, roomId: $roomId, userId: $userId) {
@@ -15,7 +43,7 @@ const SEND_MESSAGE_MUTATION = gql`
     }
   }
 `;
-
+//userId: 방에 없는 사람 초대할때 쓰려는것.나중에 방생성만들고 싶으면 사용하기
 const ROOM_QUERY = gql`
   query seeRoom($id: Int!) {
     seeRoom(id: $id) {
@@ -32,7 +60,7 @@ const ROOM_QUERY = gql`
     }
   }
 `;
-
+// seeRoom안에 id가 있어야 Apollo가 인식함
 const MessageContainer = styled.View`
   padding: 0px 10px;
   flex-direction: ${(props) => (props.outGoing ? "row-reverse" : "row")};
@@ -74,20 +102,20 @@ const InputContainer = styled.View`
 const SendBtn = styled.TouchableOpacity``;
 
 export default function Room({ route, navigation }) {
-  const { data: meData } = useMe();
-  const { register, setValue, handleSubmit, getValues, watch } = useForm();
+  const { data: meData } = useMe(); //username,avatar를 가져오기
+  const { register, setValue, handleSubmit, getValues, watch } = useForm(); // -useForm만들기
   const updataSendMessage = (cache, result) => {
-    // 1.updataSendMessage함수호출하면 cache,mutation의 result얻게됨
+    // - 메시지 업데이트하기
     const {
       data: {
         sendMessage: { ok, id },
       },
     } = result;
     if (ok && meData) {
-      const { message } = getValues();
-      setValue("message", "");
+      const { message } = getValues(); // 메시지가져와서 가짜객체 payload가 됨
+      setValue("message", ""); //업데이트할때마다 input창 비우기.getValues다음에 하기
       const messageObj = {
-        //2. 가짜 message객체 만들 수 있음/ seeRoom안과 같아야함
+        //가짜 객체 만들기. seeRoom안과 같아야함
         id,
         payload: message,
         user: {
@@ -95,10 +123,10 @@ export default function Room({ route, navigation }) {
           avatar: meData.me.avatar,
         },
         read: true,
-        __typename: "Message",
+        __typename: "Message", //Cache 속이기 위해 넣기
       };
       const messageFragment = cache.writeFragment({
-        // 3. cache에 넣을 frgment를 똑같은 모양으로 넣고
+        // 메시지 캐시에 넣기
         fragment: gql`
           fragment NewMessage on Message {
             id
@@ -113,10 +141,12 @@ export default function Room({ route, navigation }) {
         data: messageObj, //가짜객체 cache에 보내기
       });
       cache.modify({
+        //seeRoom message객체 넣기
         id: `Room:${route.params.id}`, // Room 1,2,3...이런식 Aplool는 id값으로 room판별하고 있음
         fields: {
           messages(prev) {
-            return [...prev, messageFragment]; //새로운 메시지 , 이전메시지 배열리턴
+            //이전메시지 받아서
+            return [...prev, messageFragment]; //이전 메시지 , 신규메시지 배열리턴
           },
         },
       });
@@ -125,7 +155,7 @@ export default function Room({ route, navigation }) {
   const [sendMessageMutation, { loading: sendingMessage }] = useMutation(
     SEND_MESSAGE_MUTATION,
     {
-      updata: updataSendMessage,
+      update: updataSendMessage,
     }
   );
 
@@ -145,7 +175,7 @@ export default function Room({ route, navigation }) {
     }
   };
   useEffect(() => {
-    register("message", { required: true });
+    register("message", { required: true }); // ("메시지", 요구사항임)
   }, [register]);
   useEffect(() => {
     navigation.setOptions({
@@ -167,7 +197,7 @@ export default function Room({ route, navigation }) {
   messages.reverse();
   return (
     <KeyboardAvoidingView
-      styled={{ flex: 1, backgroundColor: "black" }}
+      style={{ flex: 1, backgroundColor: "black" }}
       behavior="padding"
       keyboardVerticalOffset={50}
     >
@@ -175,9 +205,9 @@ export default function Room({ route, navigation }) {
         <FlatList
           style={{ width: "100%", marginVertical: 10 }}
           inverted
-          ItemSeparatorComponent={() => <View style={{ height: 20 }}></View>}
+          ItemSeparatorComponent={() => <View style={{ height: 20 }}></View>} //메시지item 사이넓히기
           data={messages}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={false} //수직스크롤바 안보이게함
           keyExtractor={(message) => "" + message.id}
           renderItem={renderItem}
         />
@@ -187,18 +217,18 @@ export default function Room({ route, navigation }) {
             placeholder="Write a message..."
             returnKeyLabel="Send Message"
             returnKeyType="Send"
-            onChangeText={(text) => setValue("message", text)}
+            onChangeText={(text) => setValue("message", text)} //바뀐 text 줌. register에서 message와 같음
             onSubmitEditing={handleSubmit(onValid)}
             value={watch("message")}
           />
           <SendBtn
-            onPress={handleSubmit(onValid)}
-            disabled={!Boolean(watch("message"))}
+            onPress={handleSubmit(onValid)} //아이콘누르면 값 전달
+            disabled={!Boolean(watch("message"))} //입력창 비었으면 전부 false값 돼서 비활성화
           >
             <Ionicons
               name="send"
               color={
-                !Boolean(watch("message"))
+                !Boolean(watch("message")) //입력창비었으면 컬러회색
                   ? "rgba(255, 255, 255, 0.5)"
                   : "white"
               }
